@@ -1,0 +1,7 @@
+# Documentation binaries
+*.pdf
+*.pptx
+*.ppt
+
+# Build artifacts
+build/
