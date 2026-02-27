@@ -55,11 +55,12 @@
 
 | Item                     | Cost (1) | Quantity | Total |
 |--------------------------|----------|----------|-------|
-| Vibration motor          | 1.11     | 3        | 3.33  |
-| LiDAR                    | 18.46    | 1        | 18.46 |
-| Speaker                  | 18.70    | 1        | 18.70 |
-| Gyroscope + Accelerometer| 11.91    | 1        | 11.91 |
-| **Total Cost**           |          |          | **52.40** |
+| Vibration motor          | 1.70     | 3        | 5.10  |
+| LiDAR                    | 24.00    | 1        | 24.00 |
+| Speaker                  | 5.70     | 1        | 5.70  |
+| Vibration motor driver   | 7.70     | 1        | 7.70  |
+| Gyroscope + Accelerometer| 11.40    | 1        | 11.40 |
+| **Total Cost**           |          |          | **53.90** |
 
 ### Outcomes
 - All required modules identified and ordered.
