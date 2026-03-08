@@ -142,7 +142,7 @@ We would like to thank **Dr. Bernd Porr** for supervising this project as part o
 
 ## Authors
 
-- Akshaya Bhavika
+- Akshaya Bhavika Banda
 - Mandasmitha
 - Bibid
 - Harris
