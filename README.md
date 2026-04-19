@@ -197,7 +197,8 @@ This project is licensed under the [GPL-3.0 License](LICENSE).
   <img width="634" height="632" alt="image" src="https://github.com/user-attachments/assets/e813a9bb-acf4-490c-8ee5-431d7d8d413c" />
   <img width="600" height="561" alt="image" src="https://github.com/user-attachments/assets/8331bc33-bdc9-4d1f-9dd5-e9684b8116a5" />
   <img width="1313" height="1600" alt="image" src="https://github.com/user-attachments/assets/ce754cb7-be61-4f32-b373-d64355b8d3a3" />
-  <img width="990" height="1024" alt="image" src="https://github.com/user-attachments/assets/d5be20fa-5a10-4ff0-919d-4e07695f27f2" />
+<img width="851" height="1024" alt="image" src="https://github.com/user-attachments/assets/fd9aba68-7edd-4667-8b8f-94327494d51f" />
+
 
 
 
