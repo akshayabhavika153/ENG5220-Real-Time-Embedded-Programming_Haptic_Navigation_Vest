@@ -5,8 +5,8 @@ This GitHub repository contains a real-time embedded systems project for the ENG
 ## Table of Contents
 
 - [Features](#features)
-- [Bill of Materials](#bill-of-materials)
 - [Building](#building)
+- [Documentation](#Documentation)
 - [Classes Within this GitHub](#classes-within-this-github)
 - [User Case UML Diagram](#user-case-uml-diagram)
 - [Circuit Diagram](#circuit-diagram)
@@ -24,33 +24,7 @@ This GitHub repository contains a real-time embedded systems project for the ENG
 - **Haptic Feedback** — 3 vibration motors mounted on the vest give directional warnings.
 - **Audio Alerts** — Buzzer sounds for critical hazards (falls, very close obstacles).
 
-## Bill of Materials
 
-### Controller
-
-| Microcontroller          | Quantity | Cost (£) |
-|--------------------------|----------|----------|
-| Raspberry Pi 4 Model B   | 1        | —        |
-
-### Sensors
-
-| Sensor                   | Quantity | Cost (£) |
-|--------------------------|----------|----------|
-| LiDAR (TFmini-S)        | 1        | 18.46    |
-| IMU (MPU6050)            | 1        | 11.91    |
-
-### Supporting Components
-
-| Component                | Quantity | Cost (£) |
-|--------------------------|----------|----------|
-| Vibration Motor (ERM)    | 3        | 3.33     |
-| Piezo Buzzer             | 1        | 18.70    |
-| Motor Driver (L293D)     | 1        | —        |
-| Battery Pack             | 1        | —        |
-| Vest / Garment           | 1        | —        |
-| Wiring, Connectors       | —        | —        |
-
-**Grand Total:** ~£52.40
 
 ### Cloning
 
@@ -87,40 +61,90 @@ make test
 # or for verbose output:
 ctest --verbose
 ```
+## Documentation
+Full project documentation can be found in the `/docs` folder:
+
+- Project_overview
+- Problem_statement
+- Requirement
+- System_Architecture
+- Hardware_design
+- Sesnor_selection
+- Realtime_software_design
+- Algorithm
+- Testing_plan
+- Risk_safety_ethics
+- deomo_script
+- progress_log
+ 
 
 ## Classes Within this GitHub
 
-### /src/lidar
+### /src/main
+
+The main.cpp file acts as the central entry point of the system, responsible for initialising all modules and starting the program. It sets up components such as sensors, navigation logic, and event handlers, ensuring they are correctly connected. It then runs the main execution loop, allowing the system to operate continuously and respond to real-time events.
+
+### /src/LidarSensor
 
 I2C driver for the LiDAR distance sensor. Reads distance measurements in a background thread using blocking I/O and fires callbacks to subscribers when new data arrives.
 
-### /src/imu
+### /src/IMUSensor
 
 I2C driver for the MPU6050 IMU. Samples accelerometer and gyroscope data at ~100 Hz in its own thread and delivers readings through a callback interface.
 
-### /src/haptic
+### /src/HapticController
 
 Controls 3 ERM vibration motors via GPIO. Accepts a hazard level and maps it to a vibration pattern (centre-only for distant obstacles, all motors for close/critical).
 
-### /src/audio
+### /src/audioControler
 
 Drives a piezo buzzer through a GPIO pin. Turned on for critical hazards and fall/stair events.
 
-### /src/fusion
+### /src/BatteryMonitor
 
-The decision engine subscribes to both LiDAR and IMU callbacks. It classifies obstacle distance into hazard levels, detects falls from accelerometer magnitude, and detects stairs from pitch angle. Then it drives the haptic and audio outputs accordingly.
+The battery monitoring system tracks the device’s voltage level to ensure reliable operation. It continuously measures the battery and compares it against predefined thresholds to detect low or critical levels. When the battery is low, it triggers alerts or system actions to prevent sudden shutdown.
+
+### /src/EmergencyController
+
+The emergency controller manages critical situations such as fall detection by prioritising high-risk events over normal operation. It overrides other system functions to ensure immediate response when an emergency is detected. This ensures user safety by triggering alerts and maintaining control during critical conditions.
+
+### /src/NavigationLogic
+
+The Navigation Logic module processes sensor data to determine obstacle distance and direction. It uses classification and detection algorithms to decide the appropriate alert level or action. This enables the system to guide movement and respond safely to changes in the environment.
+
+### /src/ProrityManager
+
+The Priority Manager handles incoming events by assigning and comparing their priority levels. It ensures that critical events, such as emergencies, override normal system operations. This allows the system to respond quickly and appropriately to the most important situations.
+
+### /src/SensorHealth 
+
+The Sensor Health module monitors the status and reliability of sensor data. It validates readings to ensure they are within acceptable ranges and detects faults or errors. This helps maintain system accuracy by preventing invalid or noisy data from affecting decisions.
+
+## Include
+The include.txt file lists all required header files and dependencies used in the project. It helps organise and document which components are needed for successful compilation. This ensures consistency and simplifies project setup.
+
+### IMUSensor.hpp
+The IMUSensor.hpp file defines the interface for interacting with the IMU (Inertial Measurement Unit) sensor. It provides methods to read motion and orientation data such as acceleration and angular movement. This allows the system to detect motion-related events and support features like fall detection.
+
+### NavigationLogic.hpp
+The NavigationLogic.hpp file declares the functions and structures used for processing sensor data and determining navigation decisions. It defines how obstacle distances and directions are interpreted into alert levels or actions. This serves as the core interface for the navigation system.
+
+### PriorityManager.hpp
+The PriorityManager.hpp file defines the interface for managing event priorities within the system. It includes declarations for handling events and ensuring that critical situations override normal operations. This helps maintain proper control flow in real-time conditions.
+
 
 ## User Case UML Diagram
 
-The system boots and initialises the LiDAR, IMU, motors, and buzzer. The LiDAR thread continuously reads distance data while the IMU thread reads motion data. The decision engine fuses these inputs, classifies the hazard, and immediately activates the appropriate motors and buzzer. This loop runs continuously in real time.
+The system boots and initialises the LiDAR, IMU, motors, and sound sensor. The LiDAR thread continuously reads distance data while the IMU thread reads motion data. The decision engine fuses these inputs, classifies the hazard, and immediately activates the appropriate motors and buzzer. This loop runs continuously in real time.
 
-*(Diagram to be added)*
+<img width="422" height="591" alt="image" src="https://github.com/user-attachments/assets/e83d11a8-f06c-4686-8f68-3b39aee1df9d" />
+
 
 ## Circuit Diagram
 
 The LiDAR communicates over I2C, the IMU shares the same I2C bus at a different address, and the three vibration motors are driven via GPIO pins through a motor driver IC. The buzzer is driven directly from a GPIO pin. The Raspberry Pi serves as the central controller.
 
-*(Diagram to be added)*
+
 
 ## Latency
 
@@ -161,6 +185,4 @@ This project is licensed under the [GPL-3.0 License](LICENSE).
 
 
 
-## Last Updated
 
-This README was last updated on 04/03/2026.
