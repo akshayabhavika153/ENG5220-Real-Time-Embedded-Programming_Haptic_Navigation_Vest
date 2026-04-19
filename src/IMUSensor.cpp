@@ -1,6 +1,8 @@
 #include "IMUSensor.hpp"
 #include <chrono>
 #include <cmath>
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
 #include <thread>
 #include <fcntl.h>
@@ -11,12 +13,33 @@
 namespace {
 constexpr std::uint8_t REG_CTRL1_XL = 0x10;
 constexpr std::uint8_t REG_OUTX_L_A = 0x28;
+constexpr float FALL_ANGLE_THRESHOLD_DEG = 60.0f;
 }
 
 IMUSensor::IMUSensor() {
-    i2cDevicePath = "/dev/i2c-1";
-    i2cAddress = 0x6A;
+    const char* imuDevEnv = std::getenv("HVEST_IMU_I2C_DEVICE");
+    const char* imuBusEnv = std::getenv("HVEST_IMU_BUS");
+    const char* imuAddrEnv = std::getenv("HVEST_IMU_ADDR");
+
+    if (imuDevEnv && imuDevEnv[0] != '\0') {
+        i2cDevicePath = imuDevEnv;
+    } else if (imuBusEnv && imuBusEnv[0] != '\0') {
+        i2cDevicePath = std::string("/dev/i2c-") + imuBusEnv;
+    } else {
+        i2cDevicePath = "/dev/i2c-1";
+    }
+
+    if (imuAddrEnv && imuAddrEnv[0] != '\0') {
+        i2cAddress = static_cast<int>(std::strtol(imuAddrEnv, nullptr, 0));
+    } else {
+        i2cAddress = 0x6A;
+    }
+
     i2cFd = -1;
+    hasReferenceOrientation = false;
+    referenceAx = 0.0f;
+    referenceAy = 0.0f;
+    referenceAz = 1.0f;
 }
 
 IMUSensor::~IMUSensor() {
@@ -103,13 +126,56 @@ bool IMUSensor::readAccelerationG(float& ax, float& ay, float& az) {
 }
 
 bool IMUSensor::detectFall(float ax, float ay, float az) {
+    constexpr float kReferenceMinG = 0.7f;
+    constexpr float kReferenceMaxG = 1.3f;
+
     const float magnitude = std::sqrt((ax * ax) + (ay * ay) + (az * az));
-    return magnitude > 2.8f;
+    if (magnitude < 1e-6f) {
+        return false;
+    }
+
+    const float nx = ax / magnitude;
+    const float ny = ay / magnitude;
+    const float nz = az / magnitude;
+
+    if (!hasReferenceOrientation && magnitude >= kReferenceMinG && magnitude <= kReferenceMaxG) {
+        referenceAx = nx;
+        referenceAy = ny;
+        referenceAz = nz;
+        hasReferenceOrientation = true;
+        std::cout << "[IMU] Orientation reference locked" << std::endl;
+        return false;
+    }
+
+    if (!hasReferenceOrientation) {
+        return false;
+    }
+
+    const float angleDeg = orientationChangeDegrees(ax, ay, az);
+    return angleDeg >= FALL_ANGLE_THRESHOLD_DEG;
+}
+
+float IMUSensor::orientationChangeDegrees(float ax, float ay, float az) const {
+    const float magnitude = std::sqrt((ax * ax) + (ay * ay) + (az * az));
+    if (magnitude < 1e-6f) {
+        return 0.0f;
+    }
+
+    const float nx = ax / magnitude;
+    const float ny = ay / magnitude;
+    const float nz = az / magnitude;
+
+    float dot = (referenceAx * nx) + (referenceAy * ny) + (referenceAz * nz);
+    dot = std::max(-1.0f, std::min(1.0f, dot));
+    return std::acos(dot) * 180.0f / 3.14159265358979323846f;
 }
 
 void IMUSensor::worker() {
     bool deviceErrorPrinted = false;
     auto lastFallEventTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+    auto lastAnglePrintTime = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+    const char* logAngleEnv = std::getenv("HVEST_IMU_LOG_ANGLE");
+    const bool logAngle = !(logAngleEnv && logAngleEnv[0] == '0');
 
     while (running) {
         if (i2cFd < 0) {
@@ -117,7 +183,9 @@ void IMUSensor::worker() {
                 closeDevice();
                 if (!deviceErrorPrinted) {
                     std::cout << "[IMU] Unable to initialize LSM6DSOX on "
-                              << i2cDevicePath << std::endl;
+                              << i2cDevicePath
+                              << " (addr 0x" << std::hex << i2cAddress << std::dec << ")"
+                              << std::endl;
                     deviceErrorPrinted = true;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -136,9 +204,27 @@ void IMUSensor::worker() {
             continue;
         }
 
+        const auto now = std::chrono::steady_clock::now();
+
+        if (logAngle && hasReferenceOrientation) {
+            const auto elapsedSinceLastPrint =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now - lastAnglePrintTime).count();
+            if (elapsedSinceLastPrint >= 250) {
+                const float angleDeg = orientationChangeDegrees(ax, ay, az);
+                std::cout << "[IMU] Angle delta: " << angleDeg
+                          << " deg (fall threshold: >= "
+                          << FALL_ANGLE_THRESHOLD_DEG
+                          << " deg)" << std::endl;
+                lastAnglePrintTime = now;
+            }
+        }
+
         if (detectFall(ax, ay, az)) {
-            const auto now = std::chrono::steady_clock::now();
             if ((now - lastFallEventTime) >= std::chrono::seconds(5)) {
+                const float angleDeg = orientationChangeDegrees(ax, ay, az);
+                std::cout << "[IMU] Fall detected: orientation change "
+                          << angleDeg << " deg" << std::endl;
+
                 SystemEvent fallEvent;
                 fallEvent.type = EventType::FALL_DETECTED;
                 fallEvent.priority = Priority::HIGH;
