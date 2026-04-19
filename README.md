@@ -15,6 +15,9 @@ This GitHub repository contains a real-time embedded systems project for the ENG
 - [Authors & Contributions](#authors-and-contributions)
 - [License](#license)
 - [Future Work](#future-work)
+- [Instagram](#Instagram)
+- [Hardware](#Hardware)
+- [Report](#Report)
 
 ## Features
 
@@ -182,6 +185,20 @@ This project is licensed under the [GPL-3.0 License](LICENSE).
 - Add PWM-based vibration intensity control instead of simple on/off.
 - Design a custom PCB to replace the breadboard wiring.
 - Investigate adding a second LiDAR sensor for wider field of view.
+
+## Instagram
+- ID: https://www.instagram.com/haptic_navigation_vest?igsh=eHllaTFvbmg0Ym52
+
+## Hardware
+- 3D print Design
+  <img width="828" height="756" alt="image" src="https://github.com/user-attachments/assets/aba070f3-3b38-480b-b59f-223845835edd" />
+  <img width="542" height="673" alt="image" src="https://github.com/user-attachments/assets/bb839c46-a518-453b-839f-be27412cf5ca" />
+  <img width="634" height="632" alt="image" src="https://github.com/user-attachments/assets/e813a9bb-acf4-490c-8ee5-431d7d8d413c" />
+  <img width="600" height="561" alt="image" src="https://github.com/user-attachments/assets/8331bc33-bdc9-4d1f-9dd5-e9684b8116a5" />
+  
+
+## Report
+https://gla-my.sharepoint.com/:b:/g/personal/3129723a_student_gla_ac_uk/IQBv5vHlsm6dQ6tLBdSN29omAUG6LghDywNdJCTIIJoPhVc?e=TMYyrw
 
 
 
