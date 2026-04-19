@@ -146,6 +146,7 @@ The system boots and initialises the LiDAR, IMU, motors, and sound sensor. The L
 ## Circuit Diagram
 
 The LiDAR communicates over I2C, the IMU shares the same I2C bus at a different address, and the three vibration motors are driven via GPIO pins through a motor driver IC. The buzzer is driven directly from a GPIO pin. The Raspberry Pi serves as the central controller.
+<img width="992" height="780" alt="image" src="https://github.com/user-attachments/assets/4051f633-49ef-4d8f-8730-274825d0f278" />
 
 
 
@@ -195,7 +196,10 @@ This project is licensed under the [GPL-3.0 License](LICENSE).
   <img width="542" height="673" alt="image" src="https://github.com/user-attachments/assets/bb839c46-a518-453b-839f-be27412cf5ca" />
   <img width="634" height="632" alt="image" src="https://github.com/user-attachments/assets/e813a9bb-acf4-490c-8ee5-431d7d8d413c" />
   <img width="600" height="561" alt="image" src="https://github.com/user-attachments/assets/8331bc33-bdc9-4d1f-9dd5-e9684b8116a5" />
-  
+  <img width="1313" height="1600" alt="image" src="https://github.com/user-attachments/assets/ce754cb7-be61-4f32-b373-d64355b8d3a3" />
+  <img width="990" height="1024" alt="image" src="https://github.com/user-attachments/assets/d5be20fa-5a10-4ff0-919d-4e07695f27f2" />
+
+
 
 ## Report
 https://gla-my.sharepoint.com/:b:/g/personal/3129723a_student_gla_ac_uk/IQBv5vHlsm6dQ6tLBdSN29omAUG6LghDywNdJCTIIJoPhVc?e=TMYyrw
