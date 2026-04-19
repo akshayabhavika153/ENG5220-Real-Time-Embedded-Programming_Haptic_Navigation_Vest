@@ -189,6 +189,9 @@ This project is licensed under the [GPL-3.0 License](LICENSE).
 
 ## Instagram
 - ID: https://www.instagram.com/haptic_navigation_vest?igsh=eHllaTFvbmg0Ym52
+<img width="1080" height="1698" alt="image" src="https://github.com/user-attachments/assets/1c67158d-078b-46ac-b1e1-e715feacddff" />
+
+
 
 ## Hardware
 - 3D print Design
