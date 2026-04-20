@@ -7,6 +7,38 @@ HAPTIC_CHIP="${HVEST_HAPTIC_CHIP:-gpiochip0}"
 MOTOR_LINE="${HVEST_MOTOR_LINE:-23}"
 DRV_BUS="${HVEST_DRV2605L_BUS:-1}"
 DRV_ADDR="${HVEST_DRV2605L_ADDR:-0x5a}"
+PID_FILE="${HVEST_HAPTIC_SINGLE_CONT_PID_FILE:-/tmp/hvest_haptic_single_cont_${BACKEND}.pid}"
+
+is_pid_running() {
+  local pid="$1"
+  [[ -n "$pid" ]] && kill -0 "$pid" >/dev/null 2>&1
+}
+
+stop_cont_loop() {
+  if [[ -f "$PID_FILE" ]]; then
+    local pid
+    pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+    if is_pid_running "$pid"; then
+      kill "$pid" >/dev/null 2>&1 || true
+      wait "$pid" 2>/dev/null || true
+    fi
+    rm -f "$PID_FILE"
+  fi
+}
+
+start_cont_loop() {
+  if [[ -f "$PID_FILE" ]]; then
+    local pid
+    pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+    if is_pid_running "$pid"; then
+      return
+    fi
+    rm -f "$PID_FILE"
+  fi
+
+  HVEST_HAPTIC_BACKEND="$BACKEND" "$0" _cont_loop >/dev/null 2>&1 &
+  echo "$!" > "$PID_FILE"
+}
 
 write_reg() {
   i2cset -y "$DRV_BUS" "$DRV_ADDR" "$1" "$2" >/dev/null
@@ -54,21 +86,20 @@ run_drv() {
 
   case "$MODE" in
     slow)
+      stop_cont_loop
       # soft click / light pulse
       trigger_effect_once 0x0A
       ;;
     fast)
+      stop_cont_loop
       # stronger short pulse
       trigger_effect_once 0x2F
       ;;
     cont)
-      # repeated stronger pulses; controller rate-limits this script anyway
-      for _ in 1 2 3; do
-        trigger_effect_once 0x47
-        sleep 0.12
-      done
+      start_cont_loop
       ;;
     stop)
+      stop_cont_loop
       write_reg 0x0C 0x00
       ;;
     *)
@@ -89,10 +120,21 @@ pulse_gpio() {
 
 run_gpio() {
   case "$MODE" in
-    slow) pulse_gpio 150 ;;
-    fast) pulse_gpio 70; sleep 0.08; pulse_gpio 70 ;;
-    cont) pulse_gpio 320 ;;
+    slow)
+      stop_cont_loop
+      pulse_gpio 150
+      ;;
+    fast)
+      stop_cont_loop
+      pulse_gpio 70
+      sleep 0.08
+      pulse_gpio 70
+      ;;
+    cont)
+      start_cont_loop
+      ;;
     stop)
+      stop_cont_loop
       if command -v gpioset >/dev/null 2>&1; then
         gpioset -c "$HAPTIC_CHIP" -t "20ms,0" "$MOTOR_LINE=0" || true
       fi
@@ -103,6 +145,32 @@ run_gpio() {
       ;;
   esac
 }
+
+run_cont_loop() {
+  case "$BACKEND" in
+    drv2605l)
+      while true; do
+        trigger_effect_once 0x47
+        sleep 0.12
+      done
+      ;;
+    gpio)
+      while true; do
+        pulse_gpio 320
+        sleep 0.02
+      done
+      ;;
+    *)
+      echo "Unknown HVEST_HAPTIC_BACKEND='$BACKEND'. Use 'drv2605l' or 'gpio'." >&2
+      exit 1
+      ;;
+  esac
+}
+
+if [[ "$MODE" == "_cont_loop" ]]; then
+  run_cont_loop
+  exit 0
+fi
 
 case "$BACKEND" in
   drv2605l) run_drv ;;

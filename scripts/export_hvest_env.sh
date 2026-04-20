@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+
+# Only enable strict mode when this file is executed directly.
+# When sourced, inheriting -e/-u can terminate the caller shell unexpectedly.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+	set -euo pipefail
+fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

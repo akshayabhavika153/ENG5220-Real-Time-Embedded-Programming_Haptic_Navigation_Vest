@@ -21,7 +21,10 @@ echo "[TEST] Single motor path"
 "$ROOT_DIR/scripts/hvest_haptic_single.sh" fast
 
 echo "[RUN] Starting vest_app for ${RUN_SECONDS}s"
-if command -v timeout >/dev/null 2>&1; then
+if [[ "$RUN_SECONDS" == "live" || "$RUN_SECONDS" == "0" ]]; then
+  echo "[RUN] Live mode (no timeout). Press Ctrl+C to stop."
+  "$APP_BIN"
+elif command -v timeout >/dev/null 2>&1; then
   timeout -k 2s "${RUN_SECONDS}s" "$APP_BIN" || true
 else
   "$APP_BIN" &
