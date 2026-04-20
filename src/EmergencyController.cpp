@@ -26,8 +26,6 @@ void EmergencyController::handleFallDetected() {
     std::cout << "[EMERGENCY] Fall detected" << std::endl;
 
     runIfSet("HVEST_AUDIO_CONTINUOUS_CMD");
-    runIfSet("HVEST_HAPTIC_SINGLE_CONT_CMD");
-    runIfSet("HVEST_HAPTIC_BOTH_CONT_CMD");
 
     beepOneSecond();
     beepOneSecond();
