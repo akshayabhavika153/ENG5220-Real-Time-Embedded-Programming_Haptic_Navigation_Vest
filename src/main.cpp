@@ -11,6 +11,7 @@
 #include "HapticController.hpp"
 #include "AudioController.hpp"
 #include "EmergencyController.hpp"
+#include "IMUSensor.hpp"
 #include "StartupSelfTest.hpp"
 
 namespace {
@@ -38,11 +39,11 @@ int main() {
     HapticController hapticController;
     AudioController audioController;
     EmergencyController emergencyController;
+    IMUSensor imuSensor;
 
     priorityManager.registerNavigationOutputCallback(
-        [&hapticController, &audioController](const NavigationCommand& command) {
+        [&hapticController](const NavigationCommand& command) {
             hapticController.handleNavigationCommand(command);
-            audioController.handleNavigationCommand(command);
         }
     );
 
@@ -61,6 +62,12 @@ int main() {
         }
     );
 
+    imuSensor.registerEventCallback(
+        [&priorityManager](const SystemEvent& event) {
+            priorityManager.handleEvent(event);
+        }
+    );
+
     frontLidar.registerDistanceCallback(
         [&navigationLogic](const DistanceReading& reading) {
             navigationLogic.processDistanceReading(reading);
@@ -69,11 +76,22 @@ int main() {
     );
 
     frontLidar.start();
+    imuSensor.start();
 
     while (gKeepRunning) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
     frontLidar.stop();
+    imuSensor.stop();
+
+    // Always send an explicit STOP on shutdown so script-based continuous loops
+    // are cleared between runs.
+    NavigationCommand stopCommand;
+    stopCommand.direction = Direction::NONE;
+    stopCommand.level = AlertLevel::NONE;
+    hapticController.handleNavigationCommand(stopCommand);
+    audioController.handleNavigationCommand(stopCommand);
+
     return 0;
 }
