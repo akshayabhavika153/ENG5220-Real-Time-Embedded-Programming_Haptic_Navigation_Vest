@@ -25,6 +25,7 @@ private:
     bool initializeSensor();
     bool readAccelerationG(float& ax, float& ay, float& az);
     bool detectFall(float ax, float ay, float az);
+    float orientationChangeDegrees(float ax, float ay, float az) const;
     void worker();
 
     EventCallback eventCallback;
@@ -33,6 +34,10 @@ private:
     std::string i2cDevicePath;
     int i2cAddress;
     int i2cFd;
+    bool hasReferenceOrientation;
+    float referenceAx;
+    float referenceAy;
+    float referenceAz;
 };
 
 #endif
