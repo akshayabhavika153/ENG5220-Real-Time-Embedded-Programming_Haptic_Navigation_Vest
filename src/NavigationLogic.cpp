@@ -1,10 +1,7 @@
 #include "NavigationLogic.hpp"
+#include <iostream>
 
 NavigationLogic::NavigationLogic() {
-    hasPreviousReading = false;
-    previousDistanceMeters = 0.0f;
-    previousTimestampMs = 0;
-    lastFallEventTimestampMs = 0;
 }
 
 void NavigationLogic::registerEventCallback(EventCallback cb) {
@@ -12,15 +9,23 @@ void NavigationLogic::registerEventCallback(EventCallback cb) {
 }
 
 void NavigationLogic::processDistanceReading(const DistanceReading& reading) {
-    if (detectFallFromLidar(reading)) {
-        SystemEvent fallEvent;
-        fallEvent.type = EventType::FALL_DETECTED;
-        fallEvent.priority = Priority::HIGH;
-        fallEvent.navCommand.direction = Direction::AHEAD;
-        fallEvent.navCommand.level = AlertLevel::CRITICAL;
+    constexpr float kMinValidDistance = 0.05f;
+    constexpr float kMaxValidDistance = 12.0f;
 
+    if (reading.direction == Direction::AHEAD &&
+        (reading.distanceMeters < kMinValidDistance || reading.distanceMeters > kMaxValidDistance)) {
+        std::cout << "[NAV] Invalid LiDAR distance rejected: "
+                  << reading.distanceMeters << " m" << std::endl;
+
+        // Safety behavior: force navigation stop on invalid distance so a previous
+        // vibration command does not remain latched.
+        SystemEvent stopEvent;
+        stopEvent.type = EventType::OBSTACLE;
+        stopEvent.priority = Priority::LOW;
+        stopEvent.navCommand.direction = Direction::AHEAD;
+        stopEvent.navCommand.level = AlertLevel::NONE;
         if (eventCallback) {
-            eventCallback(fallEvent);
+            eventCallback(stopEvent);
         }
         return;
     }
@@ -39,52 +44,13 @@ void NavigationLogic::processDistanceReading(const DistanceReading& reading) {
     }
 }
 
-bool NavigationLogic::detectFallFromLidar(const DistanceReading& reading) {
-    constexpr float kMinValidDistance = 0.05f;
-    constexpr float kMaxValidDistance = 12.0f;
-    constexpr float kPreFallDistanceMeters = 1.2f;
-    constexpr float kFallDistanceMeters = 0.45f;
-    constexpr std::uint64_t kRapidDropWindowMs = 700;
-    constexpr std::uint64_t kFallCooldownMs = 8000;
-
-    if (reading.direction != Direction::AHEAD ||
-        reading.distanceMeters < kMinValidDistance ||
-        reading.distanceMeters > kMaxValidDistance) {
-        return false;
-    }
-
-    bool fallDetected = false;
-    if (hasPreviousReading && reading.timestampMs > previousTimestampMs) {
-        const std::uint64_t dtMs = reading.timestampMs - previousTimestampMs;
-        const bool rapidDrop = (dtMs <= kRapidDropWindowMs) &&
-                               (previousDistanceMeters >= kPreFallDistanceMeters) &&
-                               (reading.distanceMeters <= kFallDistanceMeters);
-        const bool cooldownElapsed = (lastFallEventTimestampMs == 0) ||
-                                     ((reading.timestampMs - lastFallEventTimestampMs) >= kFallCooldownMs);
-
-        if (rapidDrop && cooldownElapsed) {
-            fallDetected = true;
-            lastFallEventTimestampMs = reading.timestampMs;
-        }
-    }
-
-    previousDistanceMeters = reading.distanceMeters;
-    previousTimestampMs = reading.timestampMs;
-    hasPreviousReading = true;
-
-    return fallDetected;
-}
-
 AlertLevel NavigationLogic::distanceToAlertLevel(float distanceMeters) const {
-    if (distanceMeters > 2.0f) {
+    // Requested behavior: vibration ON at <= 1m, OFF when > 1m.
+    if (distanceMeters > 1.0f) {
         return AlertLevel::NONE;
     }
-    if (distanceMeters > 1.0f) {
-        return AlertLevel::FAR;
-    }
-    if (distanceMeters > 0.5f) {
-        return AlertLevel::NEAR;
-    }
+
+    // Use CRITICAL so output controllers drive the continuous alert pattern.
     return AlertLevel::CRITICAL;
 }
 
